@@ -57,12 +57,9 @@ private:
     void tfTimerCallback();
 
     // tf relationship
-	double tf_lidar2base_x_;
-	double tf_lidar2base_y_;
-	double tf_lidar2base_yaw_;
-	double tf_base2map_x_;
-	double tf_base2map_y_;
-	double tf_base2map_yaw_;
+	double tf_lidar2map_x_;
+	double tf_lidar2map_y_;
+	double tf_lidar2map_yaw_;
 
     void lidarDisplay();
 

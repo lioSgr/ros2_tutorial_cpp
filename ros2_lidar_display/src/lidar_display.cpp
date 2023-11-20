@@ -34,13 +34,12 @@ LidarDisplay::LidarDisplay()
      tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
      tf_timer_ = this->create_wall_timer(
-          std::chrono::seconds(1),
+          std::chrono::milliseconds(500),
           std::bind(&LidarDisplay::tfTimerCallback, this));
 
      marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>(
         "visualization_points",
         rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-
 }
 
 LidarDisplay::~LidarDisplay()
@@ -60,31 +59,8 @@ LidarDisplay::tfTimerCallback()
      // 获取lidar2base tf
      try
      {
-          std::string target_link = "base_footprint";
-          std::string source_link = "base_scan";
-          geometry_msgs::msg::TransformStamped tf_pose;
-          tf_pose = tf_buffer_->lookupTransform(target_link, source_link, tf2::TimePointZero);
-
-          tf2::Quaternion quat;
-          tf2::fromMsg(tf_pose.transform.rotation, quat);
-          double roll, pitch, yaw;
-          tf2::Matrix3x3(quat).getRPY(roll, pitch, yaw);
-          double yaw_degrees = yaw * 180.0 / M_PI;
-          tf_lidar2base_x_ = tf_pose.transform.translation.x;
-          tf_lidar2base_y_ = tf_pose.transform.translation.y;
-          tf_lidar2base_yaw_ = yaw;
-          RCLCPP_INFO(this->get_logger(), "tf lidar----base: [x %lf, y %lf, yaw %lf(%lf°)]",
-               tf_lidar2base_x_, tf_lidar2base_y_, tf_lidar2base_yaw_, yaw_degrees);
-     }
-     catch(const std::exception& e)
-     {
-          std::cerr << e.what() << '\n';
-     }
-     // 获取base2map tf
-     try
-     {
           std::string target_link = "map";
-          std::string source_link = "base_footprint";
+          std::string source_link = "laser_2d_link";
           geometry_msgs::msg::TransformStamped tf_pose;
           tf_pose = tf_buffer_->lookupTransform(target_link, source_link, tf2::TimePointZero);
 
@@ -93,11 +69,11 @@ LidarDisplay::tfTimerCallback()
           double roll, pitch, yaw;
           tf2::Matrix3x3(quat).getRPY(roll, pitch, yaw);
           double yaw_degrees = yaw * 180.0 / M_PI;
-          tf_base2map_x_ = tf_pose.transform.translation.x;
-          tf_base2map_y_ = tf_pose.transform.translation.x;
-          tf_base2map_yaw_ = yaw;
-          RCLCPP_INFO(this->get_logger(), "tf base----map: [x %lf, y %lf, yaw %lf(%lf°)]",
-               tf_base2map_x_, tf_base2map_y_, tf_base2map_yaw_, yaw_degrees);
+          tf_lidar2map_x_ = tf_pose.transform.translation.x;
+          tf_lidar2map_y_ = tf_pose.transform.translation.y;
+          tf_lidar2map_yaw_ = yaw;
+          RCLCPP_INFO(this->get_logger(), "tf lidar----map: [x %lf, y %lf, yaw %lf(%lf°)]",
+               tf_lidar2map_x_, tf_lidar2map_y_, tf_lidar2map_yaw_, yaw_degrees);
      }
      catch(const std::exception& e)
      {
@@ -118,7 +94,7 @@ LidarDisplay::lidarDisplay()
           float range = lidar_.ranges[i];
           if (std::isinf(range) || std::isnan(range))
           {
-               range = lidar_.range_max;
+               range = 0.0;
           }
           float angle = lidar_.angle_min + lidar_.angle_increment * i;
           float x_lidar = range * std::cos(angle);
@@ -129,33 +105,18 @@ LidarDisplay::lidarDisplay()
           points.push_back(point_lidar);
      }
 
-     // 变换至base
-     std::vector<geometry_msgs::msg::PointStamped> points_base;
-     points_base.clear();
-     for (size_t i = 0; i < points.size(); i++)
-     {
-          float x_base = points[i].point.x + tf_lidar2base_x_;
-          float y_base = points[i].point.y + tf_lidar2base_y_;
-          float x_base_rotate = x_base * std::cos(tf_lidar2base_yaw_) - y_base * std::sin(tf_lidar2base_yaw_);
-          float y_base_rotate = x_base * std::sin(tf_lidar2base_yaw_) + y_base * std::cos(tf_lidar2base_yaw_);
-          geometry_msgs::msg::PointStamped point;
-          point.point.x = x_base_rotate;
-          point.point.y = y_base_rotate;
-          points_base.push_back(point);
-     }
-
      // 变换至map
      std::vector<geometry_msgs::msg::PointStamped> points_map;
      points_map.clear();
-     for (size_t i = 0; i < points_base.size(); i++)
+     for (size_t i = 0; i < points.size(); i++)
      {
-          float x_map = points_base[i].point.x + tf_base2map_x_;
-          float y_map = points_base[i].point.y + tf_base2map_y_;
-          float x_map_rotate = x_map * std::cos(tf_base2map_yaw_) - y_map * std::sin(tf_base2map_yaw_);
-          float y_map_rotate = x_map * std::sin(tf_base2map_yaw_) + y_map * std::cos(tf_base2map_yaw_);
+          float x_map_rotate = points[i].point.x * std::cos(tf_lidar2map_yaw_) - points[i].point.y * std::sin(tf_lidar2map_yaw_);
+          float y_map_rotate = points[i].point.x * std::sin(tf_lidar2map_yaw_) + points[i].point.y * std::cos(tf_lidar2map_yaw_);
+          float x_map = x_map_rotate + tf_lidar2map_x_;
+          float y_map = y_map_rotate + tf_lidar2map_y_;
           geometry_msgs::msg::PointStamped point;
-          point.point.x = x_map_rotate;
-          point.point.y = y_map_rotate;
+          point.point.x = x_map;
+          point.point.y = y_map;
           points_map.push_back(point);
      }
      
@@ -174,11 +135,15 @@ LidarDisplay::lidarDisplay()
      // 创建多个点并将它们添加到points字段中
      for (size_t i = 0; i < points_map.size(); i++)
      {
-          geometry_msgs::msg::Point point;
-          point.x = points_map[i].point.x;
-          point.y = points_map[i].point.y;
-          point.z = 0.0;
-          msg.points.push_back(point);
+          if ((i % 10) == 0)
+          {
+               geometry_msgs::msg::Point point;
+               point.x = points_map[i].point.x;
+               point.y = points_map[i].point.y;
+               RCLCPP_INFO(this->get_logger(), "num: %ld, pos[x %lf, y %lf]", (i%4), point.x, point.y);
+               point.z = 0.0;
+               msg.points.push_back(point);
+          }
      }
 
      // 设置点的颜色
@@ -188,8 +153,8 @@ LidarDisplay::lidarDisplay()
      msg.color.a = 1.0; // 不透明
 
      // 设置点的尺寸
-     msg.scale.x = 0.025; // 点的大小
-     msg.scale.y = 0.025; // 点的大小
+     msg.scale.x = 0.2; // 点的大小
+     msg.scale.y = 0.2; // 点的大小
 
      // 设置持续时间
      msg.lifetime = rclcpp::Duration::from_seconds(0.8); // 持续时间为1秒

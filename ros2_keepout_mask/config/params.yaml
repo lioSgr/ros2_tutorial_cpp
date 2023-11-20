@@ -1,0 +1,5 @@
+keepout_mask:
+  ros__parameters:
+    mask_topic: mask_fake
+
+
