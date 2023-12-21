@@ -16,6 +16,8 @@
 
 
 #include "ros2_nav_to_poses/nav_to_poses.hpp"
+#include "tf2/utils.h"
+#include "nav2_util/geometry_utils.hpp"
 
 namespace nav_to_poses
 {
@@ -78,24 +80,41 @@ NavToPoses::timerCallback()
 void
 NavToPoses::initParameters()
 {
+#if 0
+{
+     "stationId" : 1703040193477,
+     "stationName" : "s0",
+     "x" : "0.06081",
+     "y" : "-0.00389",
+     "yaw" : "-0.06626"
+},
+{
+     "stationId" : 1703040214945,
+     "stationName" : "s1",
+     "x" : "7.49658",
+     "y" : "-5.76730",
+     "yaw" : "-0.07425"
+},
+{
+     "stationId" : 1703040267539,
+     "stationName" : "s2",
+     "x" : "7.71791",
+     "y" : "8.04199",
+     "yaw" : "3.09631"
+}
+#endif
      poses_.clear();
      geometry_msgs::msg::Pose pose;
-     pose.position.x = 0.0;
-     pose.position.y = 8.0;
+     pose.position.x = 7.49658;
+     pose.position.y = -5.76730;
      pose.position.z = 0.0;
-     pose.orientation.x = 0.0;
-     pose.orientation.y = 0.0;
-     pose.orientation.z = 0.0;
-     pose.orientation.w = 1.0;
+     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-0.07425);
      poses_.push_back(pose);
 
-     pose.position.x = -8.0;
-     pose.position.y = 0.0;
+     pose.position.x = 7.71791;
+     pose.position.y = 8.04199;
      pose.position.z = 0.0;
-     pose.orientation.x = 0.0;
-     pose.orientation.y = 0.0;
-     pose.orientation.z = 0.0;
-     pose.orientation.w = 1.0;
+     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(3.09631);
      poses_.push_back(pose);
 }
 
@@ -146,8 +165,13 @@ NavToPoses::feedback_callback(
      ClientGoalHandle::SharedPtr,
      const std::shared_ptr<const nav2_msgs::action::NavigateToPose::Feedback> feedback)
 {
-     RCLCPP_INFO(this->get_logger(), "robot pose: [x %lf, y %lf]", 
-          feedback->current_pose.pose.position.x, feedback->current_pose.pose.position.y);
+     double x, y, yaw, yaw_degress;
+     x = feedback->current_pose.pose.position.x;
+     y = feedback->current_pose.pose.position.y;
+     yaw = tf2::getYaw(feedback->current_pose.pose.orientation);
+     yaw_degress = yaw / M_PI * 180.0;
+     RCLCPP_INFO(this->get_logger(), "robot pose: [x %.4lf, y %.4lf, yaw %.4lf(%.4lf)]", 
+          x, y, yaw, yaw_degress);
 }
 
 void

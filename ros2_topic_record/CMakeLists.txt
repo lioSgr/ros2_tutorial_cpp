@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(ros2_nav_to_poses)
+project(ros2_topic_record)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -12,28 +12,32 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(rclcpp_action REQUIRED)
-find_package(nav2_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(nav2_util REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 include_directories(
   include
 )
 
-set(executable_name nav_to_poses)
+set(executable_name ros2_topic_record)
 
 set(library_name ${executable_name}_core)
 
 set(dependencies
   rclcpp
-  rclcpp_action
-  nav2_msgs
+  nav_msgs
+  std_msgs
   geometry_msgs
-  nav2_util
+  tf2
+  sensor_msgs
+  tf2_geometry_msgs
 )
 
-add_library(${library_name} SHARED src/nav_to_poses.cpp)
+add_library(${library_name} SHARED src/topic_record.cpp)
 # target_include_directories(${library_name} PRIVATE include)
 ament_target_dependencies(${library_name} ${dependencies})
 
@@ -54,7 +58,6 @@ if(BUILD_TESTING)
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
-
 
 install(TARGETS ${library_name}
   ARCHIVE DESTINATION lib
