@@ -14,15 +14,16 @@
  limitations under the License.
  */
 
+
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "ros2_topic_record/topic_record.hpp"
+#include "ros2_topic_recorder/topic_recorder.hpp"
 
 int main(int argc, char ** argv)
 {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<ros2_topic_record::TopicRecord>();
+    auto node = std::make_shared<ros2_topic_recorder::TopicRecorder>();
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);
     executor.spin();

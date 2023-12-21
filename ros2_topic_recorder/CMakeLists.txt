@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(ros2_topic_record)
+project(ros2_topic_recorder)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -13,31 +13,23 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(tf2 REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
 
 include_directories(
   include
 )
 
-set(executable_name ros2_topic_record)
+set(executable_name ros2_topic_recorder)
 
 set(library_name ${executable_name}_core)
 
 set(dependencies
   rclcpp
   nav_msgs
-  std_msgs
-  geometry_msgs
-  tf2
   sensor_msgs
-  tf2_geometry_msgs
 )
 
-add_library(${library_name} SHARED src/topic_record.cpp)
+add_library(${library_name} SHARED src/topic_recorder.cpp)
 # target_include_directories(${library_name} PRIVATE include)
 ament_target_dependencies(${library_name} ${dependencies})
 
