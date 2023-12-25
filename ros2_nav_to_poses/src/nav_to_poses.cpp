@@ -105,16 +105,16 @@ NavToPoses::initParameters()
 #endif
      poses_.clear();
      geometry_msgs::msg::Pose pose;
-     pose.position.x = 7.49658;
-     pose.position.y = -5.76730;
+     pose.position.x = 2.5;
+     pose.position.y = -1.0;
      pose.position.z = 0.0;
-     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-0.07425);
+     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI_2);
      poses_.push_back(pose);
 
-     pose.position.x = 7.71791;
-     pose.position.y = 8.04199;
+     pose.position.x = 0.0;
+     pose.position.y = -3.0;
      pose.position.z = 0.0;
-     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(3.09631);
+     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
      poses_.push_back(pose);
 }
 
