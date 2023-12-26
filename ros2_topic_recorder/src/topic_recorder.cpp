@@ -20,6 +20,8 @@
 #include <chrono>
 #include <ctime>
 #include <cstdio>
+#include "tf2/utils.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 namespace ros2_topic_recorder
 {
@@ -39,6 +41,15 @@ TopicRecorder::TopicRecorder()
         10,
         std::bind(&TopicRecorder::imuSubCallback, this, std::placeholders::_1));
     
+    odom_data_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+        "/odom_data",
+        10,
+        std::bind(&TopicRecorder::odomDataSubCallback, this, std::placeholders::_1));
+
+    imu_data_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+        "/imu_data",
+        10, std::bind(&TopicRecorder::imuDataSubCallback, this, std::placeholders::_1));
+    
     std::string time;
     time = getCurrentTimeAsString();
     RCLCPP_INFO(this->get_logger(), "Time Of Recorder: %s", time.c_str());
@@ -46,7 +57,7 @@ TopicRecorder::TopicRecorder()
     // 文件路径
     std::string path = "/home/lio/9_Matlab/0_script";
     // 构建文件名
-    std::string odom_file_name = path + "/odom_" + time + ".txt";
+    std::string odom_file_name = path + "/odom_filter_" + time + ".txt";
     // 打开文件流并创建文件
     odom_file_.open(odom_file_name, std::ios::out);
     if (!odom_file_.is_open()) 
@@ -54,11 +65,25 @@ TopicRecorder::TopicRecorder()
         RCLCPP_ERROR(this->get_logger(), "File %s open failed", odom_file_name.c_str());
     }
 
-    std::string imu_file_name = path + "/imu_" + time + ".txt";
+    std::string imu_file_name = path + "/imu_filter_" + time + ".txt";
     imu_file_.open(imu_file_name, std::ios::out);
     if (!imu_file_.is_open()) 
     {
         RCLCPP_ERROR(this->get_logger(), "File %s open failed", imu_file_name.c_str());
+    }
+
+    std::string odom_data_file_name = path + "/odom_data_" + time + ".txt";
+    odom_data_file_.open(odom_data_file_name, std::ios::out);
+    if (!odom_data_file_.is_open()) 
+    {
+        RCLCPP_ERROR(this->get_logger(), "File %s open failed", odom_data_file_name.c_str());
+    }
+
+    std::string imu_data_file_name = path + "/imu_data_" + time + ".txt";
+    imu_data_file_.open(imu_data_file_name, std::ios::out);
+    if (!imu_data_file_.is_open()) 
+    {
+        RCLCPP_ERROR(this->get_logger(), "File %s open failed", imu_data_file_name.c_str());
     }
 
 }
@@ -73,6 +98,14 @@ TopicRecorder::~TopicRecorder()
     if (imu_file_.is_open()) 
     {
         imu_file_.close();
+    }
+    if (odom_data_file_.is_open())
+    {
+        odom_data_file_.close();
+    }
+    if (imu_data_file_.is_open())
+    {
+        imu_data_file_.close();
     }
 }
 
@@ -104,20 +137,22 @@ TopicRecorder::getCurrentTimeAsString()
 void
 TopicRecorder::odomSubCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
+    double yaw = tf2::getYaw(msg->pose.pose.orientation);
     std::string time;
     time = getCurrentTimeAsString();
     // 写入数据到日志文件
     if (odom_file_.is_open()) 
     {
         odom_file_ << time.c_str() << " "
-            << "Odom Data(x, y, z, ox, oy, oz, ow): " 
-            << msg->pose.pose.position.x << " "
-            << msg->pose.pose.position.y << " "
-            << msg->pose.pose.position.z << " "
-            << msg->pose.pose.orientation.x << " "
-            << msg->pose.pose.orientation.y << " "
-            << msg->pose.pose.orientation.z << " "
-            << msg->pose.pose.orientation.w << " "
+            << "Odom Filter --- " 
+            << "x: " << msg->pose.pose.position.x << ", "
+            << "y: " << msg->pose.pose.position.y << ", "
+            << "z: " << msg->pose.pose.position.z << ", "
+            << "yaw: " << yaw << ", "
+            << "ox: " << msg->pose.pose.orientation.x << ", "
+            << "oy: " << msg->pose.pose.orientation.y << ", "
+            << "oz: " << msg->pose.pose.orientation.z << ", "
+            << "ow: " << msg->pose.pose.orientation.w << " "
             << "\n";
     }
 }
@@ -125,23 +160,74 @@ TopicRecorder::odomSubCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
 void
 TopicRecorder::imuSubCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
 {
+    double yaw = tf2::getYaw(msg->orientation);
     std::string time;
     time = getCurrentTimeAsString();
     // 写入数据到日志文件
     if (imu_file_.is_open()) 
     {
         imu_file_ << time.c_str() << " "
-            << "IMU Data(ox, oy, oz, ow, angular_vx, angular_vy, angular_vz, linear_ax, linear_ay, linear_az): "
-            << msg->orientation.x << " "
-            << msg->orientation.y << " "
-            << msg->orientation.z << " "
-            << msg->orientation.w << " "
-            << msg->angular_velocity.x << " "
-            << msg->angular_velocity.y << " "
-            << msg->angular_velocity.z << " "
-            << msg->linear_acceleration.x << " "
-            << msg->linear_acceleration.y << " "
-            << msg->linear_acceleration.z << " "
+            << "IMU Filter --- "
+            << "yaw: " << yaw << ", "
+            << "ox: " << msg->orientation.x << ", "
+            << "oy: " << msg->orientation.y << ", "
+            << "oz: " << msg->orientation.z << ", "
+            << "ow: " << msg->orientation.w << ", "
+            << "angular_vx: " << msg->angular_velocity.x << ", "
+            << "angular_vy: " << msg->angular_velocity.y << ", "
+            << "angular_vz: " << msg->angular_velocity.z << ", "
+            << "linear_ax: " << msg->linear_acceleration.x << ", "
+            << "linear_ay: " << msg->linear_acceleration.y << ", "
+            << "linear_az: " << msg->linear_acceleration.z << ", "
+            << "\n";
+    }
+}
+
+void
+TopicRecorder::odomDataSubCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
+{
+    double yaw = tf2::getYaw(msg->pose.pose.orientation);
+    std::string time;
+    time = getCurrentTimeAsString();
+    // 写入数据到日志文件
+    if (odom_data_file_.is_open()) 
+    {
+        odom_data_file_ << time.c_str() << " "
+            << "Odom Data --- " 
+            << "x: " << msg->pose.pose.position.x << ", "
+            << "y: " << msg->pose.pose.position.y << ", "
+            << "z: " << msg->pose.pose.position.z << ", "
+            << "yaw: " << yaw << ", "
+            << "ox: " << msg->pose.pose.orientation.x << ", "
+            << "oy: " << msg->pose.pose.orientation.y << ", "
+            << "oz: " << msg->pose.pose.orientation.z << ", "
+            << "ow: " << msg->pose.pose.orientation.w << " "
+            << "\n";
+    }
+}
+
+void
+TopicRecorder::imuDataSubCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
+{
+    double yaw = tf2::getYaw(msg->orientation);
+    std::string time;
+    time = getCurrentTimeAsString();
+    // 写入数据到日志文件
+    if (imu_data_file_.is_open()) 
+    {
+        imu_data_file_ << time.c_str() << " "
+            << "IMU Data --- "
+            << "yaw: " << yaw << ", "
+            << "ox: " << msg->orientation.x << ", "
+            << "oy: " << msg->orientation.y << ", "
+            << "oz: " << msg->orientation.z << ", "
+            << "ow: " << msg->orientation.w << ", "
+            << "angular_vx: " << msg->angular_velocity.x << ", "
+            << "angular_vy: " << msg->angular_velocity.y << ", "
+            << "angular_vz: " << msg->angular_velocity.z << ", "
+            << "linear_ax: " << msg->linear_acceleration.x << ", "
+            << "linear_ay: " << msg->linear_acceleration.y << ", "
+            << "linear_az: " << msg->linear_acceleration.z << ", "
             << "\n";
     }
 }

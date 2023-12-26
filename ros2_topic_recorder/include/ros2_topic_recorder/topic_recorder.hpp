@@ -36,15 +36,29 @@ private:
 
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
 
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_data_sub_;
+
+    rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_data_sub_;
+
     void odomSubCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
 
     void imuSubCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
+
+    void odomDataSubCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+
+    void imuDataSubCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
 
     std::string getCurrentTimeAsString();
 
     std::fstream odom_file_;
 
     std::fstream imu_file_;
+
+    std::fstream odom_data_file_;
+
+    std::fstream imu_data_file_;
+
+
 
     
 
