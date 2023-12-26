@@ -60,7 +60,7 @@ LidarDisplay::tfTimerCallback()
      try
      {
           std::string target_link = "map";
-          std::string source_link = "laser_2d_link";
+          std::string source_link = "base_scan";
           geometry_msgs::msg::TransformStamped tf_pose;
           tf_pose = tf_buffer_->lookupTransform(target_link, source_link, tf2::TimePointZero);
 
