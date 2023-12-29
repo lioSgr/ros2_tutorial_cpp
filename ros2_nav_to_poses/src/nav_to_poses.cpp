@@ -24,18 +24,15 @@ namespace nav_to_poses
 
 NavToPoses::NavToPoses()
 : Node("ros2_nav_to_poses"),
-is_pose_arrived_(false)
+number_(0)
 {
      nav_to_poses_cli_ = rclcpp_action::create_client<nav2_msgs::action::NavigateToPose>(
           this,
           "navigate_to_pose");
      
      timer_ = this->create_wall_timer(
-          std::chrono::seconds(1),
+          std::chrono::milliseconds(500),
           std::bind(&NavToPoses::timerCallback, this));
-
-     initParameters();
-
 }  
 
 NavToPoses::~NavToPoses()
@@ -44,78 +41,24 @@ NavToPoses::~NavToPoses()
 }
 
 void
-NavToPoses::timerCallback()
+NavToPoses::initPoses(std::vector<geometry_msgs::msg::Pose> poses)
 {
-     static bool is_pose_0 = true;
-     static bool is_sended = false;
-     if (!is_pose_arrived_)
+     poses_.clear();
+     for (size_t i = 0; i < poses.size(); i++)
      {
-          if (is_pose_0)
-          {
-               if (!is_sended)
-               {
-                    is_sended = true;
-                    navToPosesHandle(poses_[0]);
-               }
-          }
-          else
-          {
-               if (!is_sended)
-               {
-                    is_sended = true;
-                    navToPosesHandle(poses_[1]);
-               }
-          }
-          
+          poses_.push_back(poses[i]);
      }
-     else
-     {
-          is_pose_arrived_ = false;
-          is_pose_0 = !is_pose_0;
-          is_sended = false;
-     }
-     
 }
 
 void
-NavToPoses::initParameters()
+NavToPoses::timerCallback()
 {
-#if 0
-{
-     "stationId" : 1703040193477,
-     "stationName" : "s0",
-     "x" : "0.06081",
-     "y" : "-0.00389",
-     "yaw" : "-0.06626"
-},
-{
-     "stationId" : 1703040214945,
-     "stationName" : "s1",
-     "x" : "7.49658",
-     "y" : "-5.76730",
-     "yaw" : "-0.07425"
-},
-{
-     "stationId" : 1703040267539,
-     "stationName" : "s2",
-     "x" : "7.71791",
-     "y" : "8.04199",
-     "yaw" : "3.09631"
-}
-#endif
-     poses_.clear();
-     geometry_msgs::msg::Pose pose;
-     pose.position.x = 2.5;
-     pose.position.y = -1.0;
-     pose.position.z = 0.0;
-     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(-M_PI_2);
-     poses_.push_back(pose);
-
-     pose.position.x = 0.0;
-     pose.position.y = -3.0;
-     pose.position.z = 0.0;
-     pose.orientation = nav2_util::geometry_utils::orientationAroundZAxis(M_PI_2);
-     poses_.push_back(pose);
+     static bool is_send_first_goal = false;
+     if (!is_send_first_goal)
+     {
+          navToPosesHandle(poses_[0]);
+          is_send_first_goal = true;
+     }
 }
 
 void
@@ -181,8 +124,15 @@ NavToPoses::result_callback(const ClientGoalHandle::WrappedResult & result)
      {
           case rclcpp_action::ResultCode::SUCCEEDED:
           {
-               is_pose_arrived_ = true;
                RCLCPP_INFO(this->get_logger(), "Server successfully executed goal");
+               // delay some time
+               rclcpp::sleep_for(std::chrono::milliseconds(1000));
+               number_ ++;
+               if (number_ == poses_.size())
+               {
+                    number_ = 0;
+               }
+               navToPosesHandle(poses_[number_]);
           }break;
           case rclcpp_action::ResultCode::ABORTED:
                RCLCPP_ERROR(this->get_logger(), "Goal was aborted");

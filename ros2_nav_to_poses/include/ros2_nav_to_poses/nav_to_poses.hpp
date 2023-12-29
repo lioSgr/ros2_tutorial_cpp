@@ -32,21 +32,20 @@ public:
     NavToPoses();
     ~NavToPoses();
 
+    void initPoses(std::vector<geometry_msgs::msg::Pose> poses);
+
 private:
     rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SharedPtr nav_to_poses_cli_;
 
     rclcpp::TimerBase::SharedPtr timer_;
 
-    // 目标点
-    std::vector<geometry_msgs::msg::Pose> poses_;
+    uint32_t number_;
 
-    bool is_pose_arrived_;
+    std::vector<geometry_msgs::msg::Pose> poses_;
 
     void timerCallback();
 
     void navToPosesHandle(geometry_msgs::msg::Pose & pose);
-
-    void initParameters();
 
     using ClientGoalHandle = rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>;
     void goal_response_callback(const ClientGoalHandle::SharedPtr & future);
@@ -56,7 +55,6 @@ private:
         const std::shared_ptr<const nav2_msgs::action::NavigateToPose::Feedback> feedback);
     
     void result_callback(const ClientGoalHandle::WrappedResult & result);
-
 
 
 
