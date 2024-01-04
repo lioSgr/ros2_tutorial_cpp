@@ -37,7 +37,7 @@ number_(0)
 
 NavToPoses::~NavToPoses()
 {
-     // 
+     nav_to_poses_cli_->async_cancel_all_goals();
 }
 
 void
@@ -64,8 +64,10 @@ NavToPoses::timerCallback()
 void
 NavToPoses::navToPosesHandle(geometry_msgs::msg::Pose & pose)
 {
-     while (!nav_to_poses_cli_->wait_for_action_server(std::chrono::seconds(1))) {
-          if (!rclcpp::ok()) {
+     while (!nav_to_poses_cli_->wait_for_action_server(std::chrono::seconds(1))) 
+     {
+          if (!rclcpp::ok()) 
+          {
                RCLCPP_ERROR(this->get_logger(), "Interruped while waiting for the action server.");
                return;
           }
@@ -75,7 +77,6 @@ NavToPoses::navToPosesHandle(geometry_msgs::msg::Pose & pose)
      using std::placeholders::_1;
      using std::placeholders::_2;
      auto goal = nav2_msgs::action::NavigateToPose::Goal();
-     // set value
      goal.behavior_tree = "";
      goal.pose.header.frame_id = "map";
      goal.pose.header.stamp = rclcpp::Clock().now();
@@ -96,9 +97,12 @@ void
 NavToPoses::goal_response_callback(const ClientGoalHandle::SharedPtr & future)
 {
      auto goal_handle = future.get();
-     if (!goal_handle) {
+     if (!goal_handle) 
+     {
           RCLCPP_ERROR(this->get_logger(), "Goal rejected by server");
-     } else {
+     } 
+     else 
+     {
           RCLCPP_INFO(this->get_logger(), "Goal accepted by server, waiting for result");
      }
 }
@@ -113,7 +117,8 @@ NavToPoses::feedback_callback(
      y = feedback->current_pose.pose.position.y;
      yaw = tf2::getYaw(feedback->current_pose.pose.orientation);
      yaw_degress = yaw / M_PI * 180.0;
-     RCLCPP_INFO(this->get_logger(), "robot pose: [x %.4lf, y %.4lf, yaw %.4lf(%.4lf)]", 
+     RCLCPP_INFO(this->get_logger(),
+          "robot pose: [x %.4lf, y %.4lf, yaw %.4lf(%.4lf°)]", 
           x, y, yaw, yaw_degress);
 }
 
