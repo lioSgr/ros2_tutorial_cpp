@@ -118,7 +118,7 @@ NavToPoses::feedback_callback(
      yaw = tf2::getYaw(feedback->current_pose.pose.orientation);
      yaw_degress = yaw / M_PI * 180.0;
      RCLCPP_INFO(this->get_logger(),
-          "robot pose: [x %.4lf, y %.4lf, yaw %.4lf(%.4lf°)]", 
+          "Pose: [x %.4lf, y %.4lf, yaw %.4lf(%.4lf°)]", 
           x, y, yaw, yaw_degress);
 }
 
