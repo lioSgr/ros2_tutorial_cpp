@@ -1,5 +1,5 @@
 /*
- Copyright 2023 ROS2 LLC
+ Copyright 2024 ROS2 LLC
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@
 #include <memory>
 
 #include "rclcpp/rclcpp.hpp"
-#include "ros2_topic_recorder/topic_recorder.hpp"
+#include "ros2_data_recorder/data_recorder.hpp"
 
 int main(int argc, char ** argv)
 {
     rclcpp::init(argc, argv);
-    auto node = std::make_shared<ros2_topic_recorder::TopicRecorder>();
+    auto node = std::make_shared<ros2_data_recorder::DataRecorder>();
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);
     executor.spin();

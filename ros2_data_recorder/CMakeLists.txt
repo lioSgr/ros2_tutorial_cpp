@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(ros2_topic_recorder)
+project(ros2_data_recorder)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -21,7 +21,7 @@ include_directories(
   include
 )
 
-set(executable_name ros2_topic_recorder)
+set(executable_name data_recorder)
 
 set(library_name ${executable_name}_core)
 
@@ -33,7 +33,7 @@ set(dependencies
   tf2_geometry_msgs
 )
 
-add_library(${library_name} SHARED src/topic_recorder.cpp)
+add_library(${library_name} SHARED src/data_recorder.cpp)
 # target_include_directories(${library_name} PRIVATE include)
 ament_target_dependencies(${library_name} ${dependencies})
 
