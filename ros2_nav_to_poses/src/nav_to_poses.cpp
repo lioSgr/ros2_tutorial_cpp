@@ -64,6 +64,9 @@ NavToPoses::timerCallback()
 void
 NavToPoses::navToPosesHandle(geometry_msgs::msg::Pose & pose)
 {
+     double yaw = tf2::getYaw(pose.orientation);
+     double yaw_degrees = yaw / M_PI * 180.0f;
+
      while (!nav_to_poses_cli_->wait_for_action_server(std::chrono::seconds(1))) 
      {
           if (!rclcpp::ok()) 
@@ -89,7 +92,8 @@ NavToPoses::navToPosesHandle(geometry_msgs::msg::Pose & pose)
           std::bind(&NavToPoses::feedback_callback, this, _1, _2);
      send_goal_options.result_callback =
           std::bind(&NavToPoses::result_callback, this, _1);
-     RCLCPP_INFO(this->get_logger(), "Sending goal: [x %lf, y %lf]", goal.pose.pose.position.x, goal.pose.pose.position.y);
+     RCLCPP_INFO(this->get_logger(), "Sending goal: [x %lf, y %lf, yaw %lf(%lf°)]",
+          goal.pose.pose.position.x, goal.pose.pose.position.y, yaw, yaw_degrees);
      nav_to_poses_cli_->async_send_goal(goal, send_goal_options);
 }
 
@@ -131,7 +135,7 @@ NavToPoses::result_callback(const ClientGoalHandle::WrappedResult & result)
           {
                RCLCPP_INFO(this->get_logger(), "Server successfully executed goal");
                // delay some time
-               rclcpp::sleep_for(std::chrono::milliseconds(1000));
+               rclcpp::sleep_for(std::chrono::milliseconds(3000));
                number_ ++;
                if (number_ == poses_.size())
                {
